@@ -536,67 +536,6 @@ requestAnimationFrame(function render(timestamp) {
     ctx.beginPath();
 
     ctx.globalAlpha = 0.5;
-    ctx.lineWidth = 0.15 * 40;
-    ctx.strokeStyle = 'teal';
-
-    function *spiral(direction) {
-      let p = new DOMPoint();
-
-      const lines  = 81;
-      const loops  = 2;
-      const height = 6;
-      const radius = 0.5;
-
-      let last = null;
-      for (let i = 0; i < lines; i++) {
-        const t = i / (lines - 1);
-        const r = t * Math.PI * 2 * loops - direction * Math.PI*0.5;
-        p.x = Math.cos(r) * radius;
-        p.y = Math.sin(r) * radius;
-        p.z = height * (0.5 - t);
-        p = transform(p);
-
-        if (last === null) {
-          last = new DOMPoint();
-        } else {
-          yield [last, p];
-        }
-
-        last.x = p.x;
-        last.y = p.y;
-        last.z = p.z;
-        last.w = p.w;
-      }
-    }
-
-    const lhs_spiral = spiral( 1);
-    const rhs_spiral = spiral(-1);
-    while (true) {
-      const lhs = lhs_spiral.next();
-      const rhs = rhs_spiral.next();
-      if (lhs.done || rhs.done) break;
-
-      ctx.beginPath();
-      ctx.moveTo(lhs.value[0].x, lhs.value[0].y);
-      ctx.lineTo(lhs.value[1].x, lhs.value[1].y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(rhs.value[0].x, rhs.value[0].y);
-      ctx.lineTo(rhs.value[1].x, rhs.value[1].y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(lhs.value[0].x, lhs.value[0].y);
-      ctx.lineTo(rhs.value[0].x, rhs.value[0].y);
-      ctx.stroke();
-    }
-
-    // ctx.globalAlpha = 1.0;
-    // ctx.fillStyle = "teal";
-    // const point = [0, 0, 0, 1];
-    // transform(point);
-    // ctx.fillRect(point[0] - 10, point[1] - 10, 20, 20);
 
     let hue = 0;
     for (const { points, id } of hailstones) {
