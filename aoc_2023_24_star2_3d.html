@@ -330,13 +330,13 @@ const DEBUG = true;
   window.hailstones = [];
   window.stone_throw = [];
   {
-    const point_count = (DEBUG ? 100 : 100000000000000)
+    const point_count = (DEBUG ? 100 : 10000000000000)
 
     for (const [px, py, pz, vx, vy, vz] of lines) {
       const points = [];
 
       const pt = { x: +px, y: +py, z: +pz };
-      for (let i = 0; i < point_count; i++) {
+      for (let i = 0; i < point_count; i += DEBUG ? 1 : 100000000) {
         points.push({ x: pt.x, y: pt.y, z: pt.z });
         pt.x += +vx;
         pt.y += +vy;
@@ -346,12 +346,12 @@ const DEBUG = true;
     }
 
     {
-      const pt = { x: 24, y: 13 };
+      const pt = { x: 24, y: 13, z: 10 };
       for (let i = 0; i < point_count; i++) {
-        stone_throw.push({ x: pt.x, y: pt.y });
+        stone_throw.push({ x: pt.x, y: pt.y, z: pt.z });
         pt.x += -3;
         pt.y +=  1;
-        //pt.z +=  2;
+        pt.z +=  2;
       }
     }
   }
@@ -617,6 +617,31 @@ requestAnimationFrame(function render(timestamp) {
       // if (point_to_line2(start, end, mouse.x, mouse.y) < Math.pow(ctx.lineWidth, 2)) {
       //   msg = `${start.x}, ${start.y}, id: ${id}`;
       // }
+    }
+
+    for (const point of stone_throw) {
+      ctx.fillStyle = `red`;
+      const size = 1.0 / (DEBUG ? 10 : 400000000000);
+
+      const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
+      if (p.z < 0) continue;
+      ctx.fillRect(p.x - 2.5, p.y - 2.5, 5, 5);
+    }
+
+    let last;
+    for (const point of stone_throw) {
+      const size = 1.0 / (DEBUG ? 10 : 400000000000);
+
+      const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
+      if (last && p.z > 0 && last.z > 0) {
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(   p.x,    p.y);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+      last = p;
     }
   }
 
