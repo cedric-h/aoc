@@ -12,8 +12,8 @@
     <canvas id="glcanvas"></canvas>
     <script>"use strict";
 
+const DEBUG = true;
 {
-  const DEBUG = true;
   let problem = !DEBUG ? `
   380596900441035, 475034410013298, 238677466991589 @ -141, -244, 154
   233796913851006, 262774170759556, 265925724673108 @ 54, 10, 23
@@ -332,14 +332,15 @@
   {
     const point_count = (DEBUG ? 100 : 100000000000000)
 
-    for (const [px, py, _, vx, vy, __] of lines) {
+    for (const [px, py, pz, vx, vy, vz] of lines) {
       const points = [];
 
-      const pt = { x: +px, y: +py };
+      const pt = { x: +px, y: +py, z: +pz };
       for (let i = 0; i < point_count; i++) {
-        points.push({ x: pt.x, y: pt.y });
+        points.push({ x: pt.x, y: pt.y, z: pt.z });
         pt.x += +vx;
         pt.y += +vy;
+        pt.z += +vz;
       }
       hailstones.push({ points, id: hailstones.length });
     }
@@ -596,6 +597,27 @@ requestAnimationFrame(function render(timestamp) {
     // const point = [0, 0, 0, 1];
     // transform(point);
     // ctx.fillRect(point[0] - 10, point[1] - 10, 20, 20);
+
+    let hue = 0;
+    for (const { points, id } of hailstones) {
+      {
+        const GOLDEN_RATIO = 1.618034;
+        hue += GOLDEN_RATIO / Math.PI * 180;
+      }
+
+      for (const point of points) {
+        ctx.fillStyle = `hsl(${hue}, 85%, 66%)`;
+        const size = 1 / (DEBUG ? 10 : 400000000000);
+
+        const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
+        if (p.z < 0) continue;
+        ctx.fillRect(p.x - 5, p.y - 5, 10, 10);
+      }
+
+      // if (point_to_line2(start, end, mouse.x, mouse.y) < Math.pow(ctx.lineWidth, 2)) {
+      //   msg = `${start.x}, ${start.y}, id: ${id}`;
+      // }
+    }
   }
 
   ctx.globalAlpha = 1.0;
