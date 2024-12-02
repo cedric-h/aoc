@@ -336,18 +336,25 @@ const DEBUG = true;
       const points = [];
 
       const pt = { x: +px, y: +py, z: +pz };
-      for (let i = 0; i < point_count; i += DEBUG ? 1 : 100000000) {
-        points.push({ x: pt.x, y: pt.y, z: pt.z });
-        pt.x += +vx;
-        pt.y += +vy;
-        pt.z += +vz;
+      const step_size = DEBUG ? 1 : 100000000000;
+      for (let i = 0; i < point_count; i += step_size) {
+        if ((pt.x > test_area_min && pt.x < test_area_max) &&
+            (pt.y > test_area_min && pt.y < test_area_max) &&
+            (pt.z > test_area_min && pt.z < test_area_max))
+          points.push({ x: pt.x, y: pt.y, z: pt.z });
+        pt.x += (+vx) * step_size;
+        pt.y += (+vy) * step_size;
+        pt.z += (+vz) * step_size;
       }
       hailstones.push({ points, id: hailstones.length });
     }
 
-    {
+    if (DEBUG) {
       const pt = { x: 24, y: 13, z: 10 };
       for (let i = 0; i < point_count; i++) {
+        if ((pt.x > test_area_min && pt.x < test_area_max) &&
+            (pt.y > test_area_min && pt.y < test_area_max) &&
+            (pt.z > test_area_min && pt.z < test_area_max))
         stone_throw.push({ x: pt.x, y: pt.y, z: pt.z });
         pt.x += -3;
         pt.y +=  1;
@@ -364,7 +371,7 @@ let input = {
   pitch:  Math.PI*0.70,
   yaw:   -Math.PI*0.12,
   eye: new DOMPoint(0, 0, 0, 1),
-  cam_pivot: new DOMPoint(0, 0, 0, 1),
+  cam_pivot: DEBUG ? new DOMPoint(0, 0, 0, 1) : new DOMPoint(7, 7, 3, 1),
 
   dampedEvent: { button: 0, movementX: 0, movementY: 0 },
 
@@ -537,31 +544,39 @@ requestAnimationFrame(function render(timestamp) {
 
     ctx.globalAlpha = 0.5;
 
+    const size = 1 / (DEBUG ? 10 : 40000000000000);
+
     let hue = 0;
     for (const { points, id } of hailstones) {
       {
         const GOLDEN_RATIO = 1.618034;
         hue += GOLDEN_RATIO / Math.PI * 180;
       }
+      ctx.strokeStyle = ctx.fillStyle = `hsl(${hue}, 85%, 66%)`;
 
-      for (const point of points) {
-        ctx.fillStyle = `hsl(${hue}, 85%, 66%)`;
-        const size = 1 / (DEBUG ? 10 : 400000000000);
+      if (DEBUG) for (const point of points) {
 
         const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
         if (p.z < 0) continue;
-        ctx.fillRect(p.x - 5, p.y - 5, 10, 10);
+        ctx.fillRect(p.x - 2.5, p.y - 2.5, 5, 5);
       }
 
-      // if (point_to_line2(start, end, mouse.x, mouse.y) < Math.pow(ctx.lineWidth, 2)) {
-      //   msg = `${start.x}, ${start.y}, id: ${id}`;
-      // }
+      let last;
+      for (const point of points) {
+        const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
+        if (last && p.z > 0 && last.z > 0) {
+          ctx.beginPath();
+          ctx.moveTo(last.x, last.y);
+          ctx.lineTo(   p.x,    p.y);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        last = p;
+      }
     }
 
     for (const point of stone_throw) {
       ctx.fillStyle = `red`;
-      const size = 1.0 / (DEBUG ? 10 : 400000000000);
-
       const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
       if (p.z < 0) continue;
       ctx.fillRect(p.x - 2.5, p.y - 2.5, 5, 5);
@@ -569,8 +584,6 @@ requestAnimationFrame(function render(timestamp) {
 
     let last;
     for (const point of stone_throw) {
-      const size = 1.0 / (DEBUG ? 10 : 400000000000);
-
       const p = transform(new DOMPoint(point.x*size, point.y*size, point.z*size));
       if (last && p.z > 0 && last.z > 0) {
         ctx.beginPath();
